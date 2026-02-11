@@ -1,1 +1,1 @@
-# argocd-dev
+## ArgoCD Setup Guide
