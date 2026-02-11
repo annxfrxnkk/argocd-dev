@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: longhorn
+  namespace: argocd
+spec:
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+  source:
+    repoURL: "https://github.com/charts/longhorn"
+    chart: longhorn
+    targetRevision: "latest" # Change to desired Longhorn version
+    helm:
+      values: |
+        # Example values you can override:
+        persistence:
+          defaultClass: true
+        defaultSettings:
+          backupTarget: ""
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: longhorn-system
