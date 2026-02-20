@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 meta
   name: nginx-test
-  namespace: default
+  namespace: nginx
   labels:
     app: nginx-test
 spec:
