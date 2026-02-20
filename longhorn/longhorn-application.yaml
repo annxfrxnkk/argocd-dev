@@ -1,27 +1,28 @@
-apiVersion: argoproj.io/v1alpha1
-kind: Application
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: longhorn
-  namespace: argocd
-spec:
-  project: default
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-  source:
-    repoURL: "https://github.com/charts/longhorn"
-    chart: longhorn
-    targetRevision: "latest" # Change to desired Longhorn version
-    helm:
-      values: |
-        # Example values you can override:
-        persistence:
-          defaultClass: true
-        defaultSettings:
-          backupTarget: ""
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: longhorn-system
+  name: longhorn-storageclass
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/version: v1.5.3
+data:
+  storageclass.yaml: |
+    kind: StorageClass
+    apiVersion: storage.k8s.io/v1
+    metadata:
+      name: longhorn
+      annotations:
+        storageclass.kubernetes.io/is-default-class: "true"
+    provisioner: driver.longhorn.io
+    allowVolumeExpansion: true
+    reclaimPolicy: "Delete"
+    volumeBindingMode: Immediate
+    parameters:
+      numberOfReplicas: "2" #  <===== change with number of worker node
+      staleReplicaTimeout: "30"
+      fromBackup: ""
+      fsType: "btrfs"
+      dataLocality: "disabled"
+
