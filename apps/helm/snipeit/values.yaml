@@ -1,0 +1,73 @@
+snipeit:
+  replicaCount: 3
+
+  deploymentStrategy:
+    type: RollingUpdate
+
+  image:
+    repository: snipe/snipe-it
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+
+  config:
+    snipeit:
+      env: production
+      debug: false
+      url: http://snipeit.scigames.at
+      key: "base64:D5oGA+zhFSVA3VwuoZoQ21RAcwBtJv/RGiqOcZ7BUvI="     
+      timezone: Europe/Vienna
+      locale: en
+    
+    #externalSecrets: "snipeit-secrets"
+
+  mysql:
+    enabled: true
+    mysqlUser: snipeit-user
+    mysqlPassword: <path:kv/data/argocd#mysqlPassword>
+    mysqlDatabase: <path:kv/data/argocd#mysqlDatabase>
+    persistence:
+      enabled: true
+      storageClass: local-path
+      accessMode: ReadWriteOnce
+      size: 8Gi
+
+  persistence:
+    enabled: true
+    storageClass: local-path
+    accessMode: ReadWriteOnce
+    size: 2Gi
+    www:
+      mountPath: /var/lib/snipeit
+      subPath: www
+    sessions:
+      mountPath: /var/www/html/storage/framework/sessions
+      subPath: sessions
+
+  ingress:
+    enabled: true
+    className: traefik
+    annotations:
+      #traefik.ingress.kubernetes.io/router.middlewares: traefik-system-retry@kubernetescrd
+      traefik.ingress.kubernetes.io/router.entrypoints: web
+    path: /
+    pathType: Prefix
+    hosts:
+      - snipeit.scigames.at
+    # tls:
+    #   - hosts:
+    #       - snipeit.scigames.at
+    #     secretName: wildcard-scigames
+
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          app: snipeit
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}

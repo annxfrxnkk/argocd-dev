@@ -1,0 +1,10 @@
+apiVersion: v2
+name: vault-ha
+description: HashiCorp Vault HA Helm deployment (auto-unsealed via transit)
+type: application
+version: 0.1.0
+
+# Helm source reference for ArgoCD
+# repo: https://helm.releases.hashicorp.com
+# chart: vault
+# targetRevision: 0.32.0

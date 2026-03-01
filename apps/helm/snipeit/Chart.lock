@@ -1,0 +1,6 @@
+dependencies:
+- name: snipeit
+  repository: https://storage.googleapis.com/t3n-helm-charts
+  version: 3.4.1
+digest: sha256:75f2c6d591ea5adb9ddbb359377d058790cd514566bd5f6e1b749152d902d3a3
+generated: "2026-02-28T17:49:14.340566635+01:00"

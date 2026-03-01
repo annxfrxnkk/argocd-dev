@@ -1,0 +1,10 @@
+apiVersion: v2
+name: seaweedfs
+description: SeaweedFS Helm deployment
+type: application
+version: 0.1.0
+
+# Helm source reference for ArgoCD
+# repo: https://seaweedfs.github.io/seaweedfs/helm
+# chart: seaweedfs
+# targetRevision: 4.0.413

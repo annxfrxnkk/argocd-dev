@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: snipeit
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: http://sggit01.scigames.at/automation1/sysdbmgt/kubernetes.git
+    targetRevision: master
+    path: apps/helm/snipeit
+    helm:
+      releaseName: snipeit
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: snipeit
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

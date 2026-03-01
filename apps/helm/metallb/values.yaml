@@ -1,0 +1,8 @@
+# MetalLB settings
+# Only overrides - all other values use chart defaults
+#
+# NOTE: The MetalLB controller is a singleton by design. It has no leader
+# election and running multiple instances causes duplicate IP assignments.
+# HA comes from the speaker DaemonSet which runs one pod per node and uses
+# per-service leader election among speakers. Do NOT scale the controller
+# beyond 1 replica.

@@ -1,0 +1,32 @@
+image:
+  registry: registry.gitlab.com
+  image: gitlab-org/gitlab-runner
+
+gitlabUrl: "http://sggit01.scigames.at"
+runnerToken: "CHANGE_ME"
+
+runners:
+  config: |
+    [[runners]]
+      [runners.kubernetes]
+        privileged = true
+
+rbac:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources: ["pods", "secrets", "configmaps"]
+      verbs: ["get", "list", "watch", "create", "patch", "delete", "update"]
+    - apiGroups: [""]
+      resources: ["pods/exec", "pods/attach"]
+      verbs: ["create", "patch", "delete"]
+    - apiGroups: [""]
+      resources: ["pods/log"]
+      verbs: ["get"]
+
+serviceAccount:
+  create: true
+
+metrics:
+  podMonitor:
+    enabled: false

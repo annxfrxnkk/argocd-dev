@@ -1,0 +1,18 @@
+# HelmChartConfig to override K3s-managed CoreDNS
+# Place in /var/lib/rancher/k3s/server/manifests/ on ONE server node
+# or apply via: kubectl apply -f coredns-ha.yaml
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: coredns
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    replicaCount: 3
+    topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          k8s-app: kube-dns

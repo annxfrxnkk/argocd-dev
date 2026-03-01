@@ -1,0 +1,96 @@
+# Harbor HA values
+# Only overrides - all other values use chart defaults
+
+externalURL: https://harbor.scigames.at
+
+cache:
+  enabled: true
+  expireHours: 87600
+
+expose:
+  type: ingress
+  ingress:
+    className: traefik
+    annotations:
+      traefik.ingress.kubernetes.io/router.middlewares: traefik-system-retry@kubernetescrd
+    hosts:
+      core: harbor.scigames.at
+  tls:
+    certSource: secret
+    secret:
+      secretName: wildcard-scigames
+
+core:
+  replicas: 3
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: DoNotSchedule
+  configureUserSettings: |
+    {
+      "auth_mode": "ldap_auth",
+      "ldap_url": "ldap://sgdc1.scigames.at:389",
+      "ldap_base_dn": "DC=scigames,DC=at",
+      "ldap_search_dn": "CN=svc_awx,OU=ServiceAccounts,OU=Vienna,DC=scigames,DC=at",
+      "ldap_search_password": "CHANGE_ME",
+      "ldap_uid": "mail",
+      "ldap_filter": "(objectClass=person)",
+      "ldap_scope": 2,
+      "ldap_group_base_dn": "OU=Groups,OU=Vienna,DC=scigames,DC=at",
+      "ldap_group_search_filter": "(objectClass=group)",
+      "ldap_group_gid": "cn",
+      "ldap_group_attribute_name": "mail",
+      "ldap_verify_cert": false
+    }
+
+portal:
+  replicas: 3
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: DoNotSchedule
+
+registry:
+  replicas: 3
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: DoNotSchedule
+
+jobservice:
+  replicas: 3
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: DoNotSchedule
+
+trivy:
+  replicas: 3
+
+exporter:
+  replicas: 3
+
+persistence:
+  persistentVolumeClaim:
+    registry:
+      existingClaim: harbor-registry-rwx
+    jobservice:
+      jobLog:
+        existingClaim: harbor-jobservice-rwx
+
+# External Valkey Sentinel cluster for HA key-value storage
+redis:
+  type: external
+  external:
+    addr: "valkey-node-0.valkey-headless.valkey.svc.cluster.local:26379,valkey-node-1.valkey-headless.valkey.svc.cluster.local:26379,valkey-node-2.valkey-headless.valkey.svc.cluster.local:26379"
+    sentinelMasterSet: "myprimary"
+    existingSecret: harbor-valkey
+
+database:
+  type: external
+  external:
+    host: postgres-rw.cnpg-system.svc.cluster.local
+    port: "5432"
+    coreDatabase: harbor
+    username: harbor
+    existingSecret: postgres-harbor

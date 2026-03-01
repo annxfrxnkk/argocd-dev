@@ -1,0 +1,10 @@
+apiVersion: v2
+name: longhorn
+description: Longhorn Distributed Storage Helm deployment
+type: application
+version: 0.1.0
+
+# Helm source reference for ArgoCD
+# repo: https://charts.longhorn.io
+# chart: longhorn
+# targetRevision: 1.11.0

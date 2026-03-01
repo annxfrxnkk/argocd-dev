@@ -1,0 +1,13 @@
+# Longhorn HA settings
+# Only overrides - all other values use chart defaults
+
+defaultSettings:
+  # Allow pods on failed nodes to be rescheduled (affects pod lifecycle, NOT data replicas)
+  nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
+  # Automatically rebalance replicas across nodes when topology changes
+  replicaAutoBalance: best-effort
+  # Prefer placing a replica on the same node as the workload (new volumes only)
+  defaultDataLocality: best-effort
+
+httproute:
+  enabled: false

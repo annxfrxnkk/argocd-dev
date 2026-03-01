@@ -1,0 +1,10 @@
+apiVersion: v2
+name: metallb
+description: MetalLB Load Balancer Helm deployment
+type: application
+version: 0.1.0
+
+# Helm source reference for ArgoCD
+# repo: https://metallb.github.io/metallb
+# chart: metallb
+# targetRevision: 0.15.3

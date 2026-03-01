@@ -1,0 +1,61 @@
+# Traefik Ingress Controller values
+# Only overrides - all other values use chart defaults
+#
+# Replaces NGINX Ingress Controller (kubernetes/ingress-nginx, EOL March 2026).
+# Deployed as DaemonSet with MetalLB LoadBalancer service on VIP 10.11.70.50.
+
+deployment:
+  kind: DaemonSet
+
+# Pull from docker.io so the k3s Harbor proxy cache mirror is used
+image:
+  registry: docker.io
+
+service:
+  type: LoadBalancer
+  spec:
+    loadBalancerIP: "10.11.70.50"
+
+# Global HTTP->HTTPS redirect and TLS termination
+ports:
+  web:
+    port: 8000
+    expose:
+      default: true
+    exposedPort: 80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    port: 8443
+    expose:
+      default: true
+    exposedPort: 443
+    http:
+      tls:
+        enabled: true
+
+# Allow cross-namespace Middleware references
+providers:
+  kubernetesCRD:
+    allowCrossNamespace: true
+
+# Disable version check and anonymous usage reporting
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+# Backend connection timeouts (match previous NGINX config)
+additionalArguments:
+  - "--serversTransport.forwardingTimeouts.dialTimeout=5s"
+  - "--serversTransport.forwardingTimeouts.responseHeaderTimeout=30s"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 256Mi

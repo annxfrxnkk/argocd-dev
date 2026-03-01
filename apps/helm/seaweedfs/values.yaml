@@ -1,0 +1,87 @@
+global:
+  enableReplication: true
+  replicationPlacement: "001"
+
+# Masters use local-path — Raft consensus handles replication across 3 masters.
+# No need for Longhorn underneath.
+master:
+  enabled: true
+  replicas: 3
+  port: 9333
+  grpcPort: 19333
+  volumeSizeLimitMB: 1000
+  defaultReplication: "001"
+  data:
+    type: "persistentVolumeClaim"
+    size: "5Gi"
+    storageClass: "local-path"
+  logs:
+    type: "emptyDir"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Volume servers use local-path — SeaweedFS replicates data across servers
+# (replication 001 = 2 copies). Direct disk I/O, no double-replication overhead.
+# Scale to 6 replicas when cluster expands to 6 nodes.
+volume:
+  enabled: true
+  replicas: 3
+  port: 8080
+  grpcPort: 18080
+  minFreeSpacePercent: 5
+  compactionMBps: "50"
+  dataDirs:
+    - name: data1
+      type: "persistentVolumeClaim"
+      size: "50Gi"
+      storageClass: "local-path"
+      maxVolumes: 0
+  idx: {}
+  logs:
+    type: "emptyDir"
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+# Filer uses local-path — single replica with LevelDB2 for now.
+# When scaling to 2+ filers at 6 nodes, switch to CNPG PostgreSQL backend.
+filer:
+  enabled: true
+  replicas: 1
+  port: 8888
+  grpcPort: 18888
+  defaultReplicaPlacement: "001"
+  encryptVolumeData: false
+  data:
+    type: "persistentVolumeClaim"
+    size: "10Gi"
+    storageClass: "local-path"
+  logs:
+    type: "emptyDir"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  s3:
+    enabled: true
+    port: 8333
+    enableAuth: false
+  extraEnvironmentVars:
+    WEED_LEVELDB2_ENABLED: "true"
+    WEED_FILER_OPTIONS_RECURSIVE_DELETE: "false"
+    WEED_FILER_BUCKETS_FOLDER: "/buckets"
+
+s3:
+  enabled: false

@@ -1,0 +1,50 @@
+global:
+  tlsDisable: true
+
+autoSealToken: ""
+
+server:
+  image:
+    repository: "hashicorp/vault"
+    tag: "1.21.2"
+
+  standalone:
+    enabled: false
+
+  ha:
+    enabled: true
+    replicas: 3
+    raft:
+      enabled: true
+      setNodeId: true
+      config: |
+        ui = true
+        disable_mlock = true
+        max_lease_ttl = "17520h"
+
+        storage "raft" {
+          path = "/vault/data"
+          retry_join {
+            leader_api_addr = "http://vault-ha-0.vault-ha-internal:8200"
+          }
+        }
+
+        seal "transit" {
+          address = "http://vault-transit.vault.svc.cluster.local:8200"
+          token = "{{ .Values.autoSealToken }}"
+          key_name = "vault-ha-key"
+          mount_path = "transit/"
+        }
+
+        listener "tcp" {
+          address = "0.0.0.0:8200"
+          cluster_address = "0.0.0.0:8201"
+          tls_disable = 1
+        }
+
+        service_registration "kubernetes" {}
+
+  dataStorage:
+    enabled: true
+    storageClass: longhorn
+    size: 5Gi

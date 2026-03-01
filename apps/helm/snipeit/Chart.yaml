@@ -1,0 +1,10 @@
+apiVersion: v2
+name: snipeit
+description: A Helm chart for Snipe-It
+type: application
+version: 3.4.1
+appVersion: "6.2.3"
+dependencies:
+  - name: snipeit
+    version: 3.4.1
+    repository: https://storage.googleapis.com/t3n-helm-charts

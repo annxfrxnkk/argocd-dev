@@ -1,0 +1,11 @@
+mirrors:
+  docker.io:
+    endpoint:
+      - "http://harbor.scigames.at:80"
+
+    rewrite:
+      "^(.*)": "docker-cache/$1"
+configs:
+  "*":
+    tls:
+      insecure_skip_verify: true

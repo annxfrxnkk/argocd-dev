@@ -1,0 +1,47 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: harbor-core-pdb
+  namespace: harbor
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: harbor
+      component: core
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: harbor-registry-pdb
+  namespace: harbor
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: harbor
+      component: registry
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: harbor-portal-pdb
+  namespace: harbor
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: harbor
+      component: portal
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: harbor-jobservice-pdb
+  namespace: harbor
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: harbor
+      component: jobservice

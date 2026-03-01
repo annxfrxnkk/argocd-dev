@@ -1,0 +1,10 @@
+apiVersion: v2
+name: valkey
+description: Valkey HA (Sentinel) Helm deployment
+type: application
+version: 0.1.0
+
+# Helm source reference for ArgoCD
+# repo: https://charts.bitnami.com/bitnami
+# chart: valkey
+# targetRevision: 5.2.0

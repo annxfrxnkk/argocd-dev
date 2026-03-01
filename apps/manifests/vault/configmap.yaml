@@ -1,0 +1,178 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-transit
+  namespace: vault
+data:
+  init-script.sh: |
+    #!/bin/sh
+
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    INIT_FILE="/vault/data/init-table.txt"
+    TOKEN_FILE="/vault/data/token-table.txt"
+
+    status_json=""
+    i=0
+    while [ "$i" -lt 30 ]; do
+      status_json="$(vault status -format=json 2>/dev/null || true)"
+      if echo "$status_json" | grep -q '"initialized"'; then
+        break
+      fi
+      i=$((i + 1))
+      sleep 2
+    done
+
+    if ! echo "$status_json" | grep -q '"initialized"'; then
+      echo "Vault status not available; skipping init"
+      exit 0
+    fi
+
+    init_status="$(echo "$status_json" | awk -F: '/"initialized"/{gsub(/[ ,]/,"",$2); print $2; exit}')"
+    sealed_status="$(echo "$status_json" | awk -F: '/"sealed"/{gsub(/[ ,]/,"",$2); print $2; exit}')"
+
+    if [ "$init_status" != "true" ]; then
+      if [ -s "$INIT_FILE" ]; then
+        echo "Vault reports uninitialized but init file exists; skipping init."
+      else
+        echo "Initializing Vault..."
+        tmp_file="${INIT_FILE}.tmp"
+        if vault operator init -key-shares=1 -key-threshold=1 -format=table > "$tmp_file"; then
+          mv "$tmp_file" "$INIT_FILE"
+        else
+          rm -f "$tmp_file"
+          echo "Vault init failed; skipping."
+          exit 0
+        fi
+      fi
+    fi
+
+    if [ ! -s "$INIT_FILE" ]; then
+      echo "Init file missing; cannot proceed."
+      exit 0
+    fi
+
+    VAULT_ROOT_TOKEN="$(awk '/Initial Root Token/ {print $4}' "$INIT_FILE")"
+    UNSEAL_KEY="$(awk '/Unseal Key 1/ {print $4}' "$INIT_FILE")"
+
+    if [ -z "$VAULT_ROOT_TOKEN" ] || [ -z "$UNSEAL_KEY" ]; then
+      echo "Init file missing keys; cannot proceed."
+      exit 0
+    fi
+
+    export VAULT_TOKEN="$VAULT_ROOT_TOKEN"
+
+    if [ "$sealed_status" = "true" ]; then
+      echo "Unsealing Vault..."
+      if ! vault operator unseal "$UNSEAL_KEY"; then
+        echo "Unseal failed; skipping."
+        exit 0
+      fi
+    fi
+
+    if ! vault secrets list -format=json 2>/dev/null | grep -q '"transit/"'; then
+      echo "Enable Transit Secrets..."
+      vault secrets enable transit
+    fi
+
+    if ! vault list -format=json transit/keys 2>/dev/null | grep -q '"vault-ha-key"'; then
+      echo "Create New Unseal Keys..."
+      vault write -f transit/keys/vault-ha-key
+    fi
+
+    if ! vault policy read auto-unseal >/dev/null 2>&1; then
+      echo "Create Policy For Auto Unsealing..."
+      cat <<POLICY | vault policy write auto-unseal -
+      path "transit/encrypt/vault-ha-key" {
+        capabilities = ["update"]
+      }
+      path "transit/decrypt/vault-ha-key" {
+        capabilities = ["update"]
+      }
+      POLICY
+    fi
+
+    if [ ! -s "$TOKEN_FILE" ]; then
+      echo "Create Token To Authenticate And Fetch Unseal Keys"
+      vault token create -policy=auto-unseal -format=table > "$TOKEN_FILE"
+    fi
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-ha
+  namespace: vault
+data:
+  init-script.sh: |
+    #!/bin/sh
+
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    LOCK_FILE="/vault/data/init.lock"
+    INIT_FILE="/vault/data/init.txt"
+
+    status_json=""
+    i=0
+    while [ "$i" -lt 30 ]; do
+      status_json="$(vault status -format=json 2>/dev/null || true)"
+      if echo "$status_json" | grep -q '"initialized"'; then
+        break
+      fi
+      i=$((i + 1))
+      sleep 2
+    done
+
+    if ! echo "$status_json" | grep -q '"initialized"'; then
+      echo "Vault status not available; skipping"
+      exit 0
+    fi
+
+    init_status="$(echo "$status_json" | awk -F: '/"initialized"/{gsub(/[ ,]/,"",$2); print $2; exit}')"
+
+    if [ -f "$LOCK_FILE" ]; then
+      echo "Vault already initialized."
+      exit 0
+    fi
+
+    if [ "$(hostname)" = "vault-ha-0" ]; then
+      echo "Running initialization on vault-ha-0..."
+
+      if [ "$init_status" = "true" ]; then
+        echo "Vault is already initialized. Skipping."
+        touch "$LOCK_FILE"
+        exit 0
+      fi
+
+      echo "Initializing Vault..."
+      tmp_file="${INIT_FILE}.tmp"
+      if vault operator init -format=table > "$tmp_file"; then
+        mv "$tmp_file" "$INIT_FILE"
+      else
+        rm -f "$tmp_file"
+        echo "Vault init failed; skipping."
+        exit 0
+      fi
+
+      touch "$LOCK_FILE"
+
+      echo "Vault initialized."
+    else
+      echo "Joining Vault cluster as $(hostname)..."
+
+      sleep 25
+
+      JOIN_STATUS="$(vault operator raft list-peers -format=table 2>/dev/null | grep -c "vault-ha-0.vault-ha-internal:8201" || true)"
+
+      if [ "$JOIN_STATUS" -eq 0 ]; then
+        echo "Joining Raft cluster..."
+        vault operator raft join http://vault-ha-0.vault-ha-internal:8200 || {
+          echo "Failed to join raft cluster. Retrying in 10 seconds..."
+          sleep 10
+          vault operator raft join http://vault-ha-0.vault-ha-internal:8200
+        }
+      else
+        echo "Already joined Raft cluster."
+      fi
+    fi
+
+    echo "Vault setup complete."

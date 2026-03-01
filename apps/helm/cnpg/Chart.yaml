@@ -1,0 +1,10 @@
+apiVersion: v2
+name: cnpg
+description: CloudNativePG Operator Helm deployment
+type: application
+version: 0.1.0
+
+# Helm source reference for ArgoCD
+# repo: https://cloudnative-pg.github.io/charts
+# chart: cloudnative-pg
+# targetRevision: 0.27.1

@@ -1,0 +1,23 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: awx-web-pdb
+  namespace: awx
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: awx-web
+      app.kubernetes.io/managed-by: awx-operator
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: awx-task-pdb
+  namespace: awx
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: awx-task
+      app.kubernetes.io/managed-by: awx-operator

@@ -1,0 +1,35 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: gitlab-runner-role
+  namespace: gitlab-runner
+rules:
+  - apiGroups: [""]
+    resources:
+      - secrets
+      - pods
+      - pods/attach
+      - pods/exec
+      - pods/portforward
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gitlab-runner-rolebinding
+  namespace: gitlab-runner
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: gitlab-runner
+roleRef:
+  kind: Role
+  name: gitlab-runner-role
+  apiGroup: rbac.authorization.k8s.io

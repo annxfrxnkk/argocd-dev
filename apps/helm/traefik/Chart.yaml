@@ -1,0 +1,10 @@
+apiVersion: v2
+name: traefik
+description: Traefik Ingress Controller Helm deployment
+type: application
+version: 0.1.0
+
+# Helm source reference for ArgoCD
+# repo: https://traefik.github.io/charts
+# chart: traefik
+# targetRevision: 39.0.1

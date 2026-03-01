@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-harbor
+  namespace: harbor
+  labels:
+    cnpg.io/reload: "true"
+stringData:
+  host: postgres-rw.cnpg-system.svc.cluster.local
+  port: "5432"
+  database: harbor
+  username: harbor
+  password: CHANGE_ME
+  sslmode: prefer
+  target_session_attrs: read-write
+  type: unmanaged
+type: Opaque

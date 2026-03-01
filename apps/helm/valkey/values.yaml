@@ -1,0 +1,63 @@
+# Valkey HA (Sentinel) values
+# Only overrides - all other values use chart defaults
+#
+# Shared HA key-value store. Currently used by Harbor.
+
+# Images: chart defaults to bitnami/valkey and bitnami/valkey-sentinel.
+# Override registry to docker.io so the k3s Harbor proxy cache mirror is used.
+image:
+  registry: docker.io
+
+architecture: replication
+
+auth:
+  enabled: true
+  existingSecret: valkey-password
+  existingSecretPasswordKey: valkey-password
+  # Disable sentinel-specific auth - Harbor's redis+sentinel:// URL scheme
+  # cannot pass a separate sentinel password. Data auth is still enforced.
+  sentinel: false
+
+sentinel:
+  enabled: true
+  quorum: 2
+  image:
+    registry: docker.io
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+master:
+  resources:
+    requests:
+      cpu: 150m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  persistence:
+    enabled: true
+    storageClass: longhorn
+    size: 10Gi
+
+replica:
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 150m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  persistence:
+    enabled: true
+    storageClass: longhorn
+    size: 10Gi
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: valkey

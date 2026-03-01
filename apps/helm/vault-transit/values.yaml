@@ -1,0 +1,64 @@
+global:
+  tlsDisable: true
+
+server:
+  image:
+    repository: "hashicorp/vault"
+    tag: "1.21.2"
+
+  standalone:
+    enabled: false
+
+  ha:
+    enabled: true
+    replicas: 3
+    raft:
+      enabled: true
+      setNodeId: true
+      config: |
+        ui = true
+        disable_mlock = true
+        max_lease_ttl = "17520h"
+
+        storage "raft" {
+          path = "/vault/data"
+          retry_join {
+            leader_api_addr = "http://vault-transit-0.vault-transit-internal:8200"
+          }
+        }
+
+        listener "tcp" {
+          address = "0.0.0.0:8200"
+          cluster_address = "0.0.0.0:8201"
+          tls_disable = 1
+        }
+
+        service_registration "kubernetes" {}
+
+  dataStorage:
+    enabled: true
+    storageClass: longhorn
+    size: 1Gi
+
+  postStart:
+    - /bin/sh
+    - -c
+    - |
+        if [ -z "$VAULT_UNSEAL_KEY" ]; then
+          echo "VAULT_UNSEAL_KEY not set; skipping unseal."
+          exit 0
+        fi
+        i=0
+        while [ "$i" -lt 30 ]; do
+          if vault status >/dev/null 2>&1; then
+            break
+          fi
+          i=$((i + 1))
+          sleep 2
+        done
+        vault operator unseal "$VAULT_UNSEAL_KEY" || true
+
+  extraSecretEnvironmentVars:
+    - envName: VAULT_UNSEAL_KEY
+      secretName: vault-transit-unseal
+      secretKey: unseal_key

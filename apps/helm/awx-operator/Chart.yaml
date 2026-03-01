@@ -1,0 +1,10 @@
+apiVersion: v2
+name: awx-operator
+description: AWX Operator Helm deployment
+type: application
+version: 0.1.0
+
+# Helm source reference for ArgoCD
+# repo: https://ansible-community.github.io/awx-operator-helm/
+# chart: awx-operator
+# targetRevision: 3.2.0

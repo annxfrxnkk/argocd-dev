@@ -1,0 +1,10 @@
+apiVersion: v2
+name: gitlab-runner
+description: GitLab Runner Helm deployment
+type: application
+version: 0.1.0
+
+# Helm source reference for ArgoCD
+# repo: https://charts.gitlab.io
+# chart: gitlab-runner
+# targetRevision: 0.85.0

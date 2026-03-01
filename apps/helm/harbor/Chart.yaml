@@ -1,0 +1,10 @@
+apiVersion: v2
+name: harbor
+description: Harbor Container Registry Helm deployment
+type: application
+version: 0.1.0
+
+# Helm source reference for ArgoCD
+# repo: https://helm.goharbor.io
+# chart: harbor
+# targetRevision: 1.18.2
